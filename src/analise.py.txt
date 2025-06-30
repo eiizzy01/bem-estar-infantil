@@ -1,0 +1,40 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from wordcloud import WordCloud
+
+sns.set(style="whitegrid")
+
+df = pd.read_excel("dados/analise_bem_estar_infantil.xlsx", sheet_name="Respostas ao formulário 1")
+df.columns = [
+    "timestamp", "nome", "idade", "sexo",
+    "oque_e_felicidade",
+    "img_familia_unida", "img_escola", "img_criancas_brincando", "img_criancas_brigando",
+    "img_adultos_brigando", "img_passeio_viagem", "img_guardando_dinheiro",
+    "img_criancas_comendo", "img_recebendo_bronca", "img_crianca_excluida"
+]
+cols_imgs = df.columns[5:]
+for col in cols_imgs:
+    df[col] = df[col].str.strip().str[0]
+
+mapa_emocoes = {'a': 'Felicidade', 'b': 'Indiferença', 'c': 'Tristeza', 'd': 'Raiva'}
+df_emocoes = df.copy()
+for col in cols_imgs:
+    df_emocoes[col] = df_emocoes[col].map(mapa_emocoes)
+
+for col in cols_imgs:
+    plt.figure(figsize=(6,4))
+    sns.countplot(x=df_emocoes[col], order=['Felicidade', 'Indiferença', 'Tristeza', 'Raiva'], palette='pastel')
+    plt.title(f'Emoções para: {col.replace("img_", "").replace("_", " ").title()}')
+    plt.ylabel('Número de crianças')
+    plt.xlabel('Emoção')
+    plt.tight_layout()
+    plt.savefig(f'imagens/{col}.png')
+
+text = " ".join(df['oque_e_felicidade'].dropna().tolist())
+wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+plt.figure(figsize=(10,5))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.title("Palavras mais citadas sobre felicidade")
+plt.savefig("imagens/wordcloud.png")
